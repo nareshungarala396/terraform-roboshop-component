@@ -70,7 +70,7 @@ resource "aws_lb_target_group" "main" {
   health_check {
     interval            = 10
     path   = local.health_check_path
-    port                = "traffic-port"
+    port                = local.tg_port
     protocol            = "HTTP"
     timeout             = 2
     healthy_threshold   = 2
@@ -135,6 +135,14 @@ resource "aws_autoscaling_group" "main" {
   force_delete              = false
   vpc_zone_identifier       = [local.private_subnet_id]
   target_group_arns         = [aws_lb_target_group.main.arn]
+
+  instance_refresh {
+    strategy = "Rolling"
+    preferences {
+      min_healthy_percentage = 50 # atleast 50% of the instances should be up and running
+    }
+    triggers = ["launch_template"]
+  }
 
   launch_template {
   id = aws_launch_template.main.id
